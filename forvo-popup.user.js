@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forvo发音弹窗
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  选中单词后弹窗显示Forvo发音页面，支持英语和日语自动识别
 // @author       Jooooody
 // @match        *://*/*
