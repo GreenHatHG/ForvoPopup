@@ -1,10 +1,10 @@
 # Forvo发音弹窗
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.0-blue.svg)](https://github.com/yourusername/ForvoPopup)
+[![Version](https://img.shields.io/badge/version-2.2-blue.svg)](https://github.com/yourusername/ForvoPopup)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Compatible-green.svg)](https://www.tampermonkey.net/)
 
-一个智能的浏览器用户脚本，让您可以通过简单的快捷键操作，快速查看选中单词在Forvo上的发音。支持英语和日语的自动语言识别，提供响应式弹窗体验。
+一个智能的浏览器用户脚本，让您可以通过简单的快捷键操作，快速查看选中单词在Forvo上的发音。支持英语和日语的自动语言识别，提供响应式弹窗体验，并可合并下载所有音频文件。
 
 ## ✨ 特性
 
@@ -15,6 +15,8 @@
 - 🚀 **轻量高效**: 纯JavaScript实现，无外部依赖
 - 🌐 **全站兼容**: 在任何网站上都能使用
 - 🎨 **优雅动画**: 流畅的弹窗动画效果
+- 📥 **音频下载**: 可合并下载所有主词条音频文件
+- 🎵 **智能合并**: 自动将多个音频合并为单个WAV文件
 
 电脑端效果，会打开一个新标签页的窗口：
 ![](images/2025-07-27_011723.png)
@@ -62,6 +64,13 @@
 2. **点击按钮**: 选择文本后，右下角会出现一个浮动的发音按钮
 3. **查看发音**: 点击按钮后会在新标签页中打开Forvo发音页面
 
+### 📥 音频下载功能
+
+1. **在Forvo页面**: 当您访问Forvo发音页面时，右上角会自动显示"📥 下载合并音频"按钮
+2. **一键下载**: 点击按钮即可下载该单词所有主词条的音频文件
+3. **智能合并**: 脚本会自动将多个音频合并成一个WAV文件，音频间有0.5秒间隔
+4. **仅主词条**: 只下载主词条的发音，排除同义词和相关词汇的发音
+
 ### 支持的语言
 
 - **英语**: 自动识别英文单词和短语
@@ -83,6 +92,12 @@
 长按选中: "世界" → 点击浮动按钮      → 打开日语发音页面（新标签页）
 ```
 
+**音频下载操作**：
+```
+访问Forvo页面 → 点击"📥 下载合并音频"按钮 → 自动下载合并的WAV文件
+例如: forvo.com/word/hello → 点击下载按钮 → 获得 hello.wav 文件
+```
+
 ## 🛠️ 技术实现
 
 ### 核心功能
@@ -102,6 +117,10 @@
 ├── 桌面端交互 (handleKeyDown)
 ├── 移动端交互 (createForvoMobileButton, handleSelectionChange)
 ├── 弹窗创建 (createForvoPopup)
+├── 音频获取 (getAllAudioUrls, scrapeSound)
+├── 音频下载 (downloadAudio, downloadMergedAudio)
+├── 音频合并 (mergeAudioFiles, audioBufferToWav)
+├── 下载按钮注入 (injectDownloadButton)
 └── 样式注入 (CSS animations)
 ```
 
@@ -116,6 +135,8 @@
 | 桌面端弹窗尺寸 | 响应式 | 根据屏幕尺寸自动调整 |
 | 移动端按钮位置 | 右下角 | 浮动按钮的显示位置 |
 | 动画效果 | 启用 | 淡入和缩放动画 |
+| 音频间隔时间 | 0.5秒 | 合并音频时各音频间的间隔 |
+| 下载超时时间 | 15秒 | 单个音频文件的下载超时限制 |
 
 ## 🔧 开发
 
@@ -167,7 +188,14 @@ function detectLanguage(text) {
 
 ## 📝 更新日志
 
-### v1.0 (当前版本)
+### v2.2 (当前版本)
+- ✅ 音频下载和合并功能
+- ✅ 智能识别主词条发音（排除同义词）
+- ✅ 自动在Forvo页面注入下载按钮
+- ✅ 支持WAV格式音频合并
+- ✅ 跨域音频下载支持
+
+### v1.0
 - ✅ 基础功能实现
 - ✅ 英语和日语语言检测
 - ✅ 桌面端快捷键支持 (Ctrl+Alt)
