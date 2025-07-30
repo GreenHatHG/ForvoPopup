@@ -1,10 +1,10 @@
 # Forvo发音弹窗
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-2.2-blue.svg)](https://github.com/yourusername/ForvoPopup)
+[![Version](https://img.shields.io/badge/version-2.4-blue.svg)](https://github.com/yourusername/ForvoPopup)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Compatible-green.svg)](https://www.tampermonkey.net/)
 
-一个智能的浏览器用户脚本，让您可以通过简单的快捷键操作，快速查看选中单词在Forvo上的发音。支持英语和日语的自动语言识别，提供响应式弹窗体验，并可合并下载所有音频文件。
+一个智能的浏览器用户脚本，让您可以通过简单的快捷键操作，快速查看选中单词在Forvo上的发音。支持英语和日语的自动语言识别，提供响应式弹窗体验，并可合并下载所有音频文件。新增智能音量增强功能，自动调节音频音量并支持智能重复播放。
 
 ## ✨ 特性
 
@@ -15,8 +15,11 @@
 - 🚀 **轻量高效**: 纯JavaScript实现，无外部依赖
 - 🌐 **全站兼容**: 在任何网站上都能使用
 - 🎨 **优雅动画**: 流畅的弹窗动画效果
-- 📥 **音频下载**: 可合并下载所有主词条音频文件
+- 📥 **音频下载**: 可合并下载所有主词条音频文件（含例句，排除同义词）
 - 🎵 **智能合并**: 自动将多个音频合并为单个WAV文件
+- 🔊 **智能音量增强**: 自动标准化音频音量，确保播放效果一致
+- 🔄 **智能重复播放**: 发音较少时自动重复播放（1个发音重复3次，2个发音重复2次）
+- 🎯 **精确筛选**: 通过严格的区块限定，只捕获主词条发音，彻底杜绝相关短语干扰
 
 电脑端效果，会打开一个新标签页的窗口：
 ![](images/2025-07-27_011723.png)
@@ -66,10 +69,13 @@
 
 ### 📥 音频下载功能
 
-1. **在Forvo页面**: 当您访问Forvo发音页面时，右上角会自动显示"📥 下载合并音频"按钮
+1. **在Forvo页面**: 当您访问Forvo发音页面时，右上角会自动显示"📥 下载合并音频 (语言)"按钮
 2. **一键下载**: 点击按钮即可下载该单词所有主词条的音频文件
 3. **智能合并**: 脚本会自动将多个音频合并成一个WAV文件，音频间有0.5秒间隔
-4. **仅主词条**: 只下载主词条的发音，排除同义词和相关词汇的发音
+4. **精确筛选**: 通过严格的区块限定，只下载主词条和例句的发音，彻底排除同义词和相关词汇
+5. **音量标准化**: 自动分析每个音频的音量特征，智能调节增益，确保播放音量一致
+6. **智能重复**: 当发音数量较少时自动重复播放（1个发音重复3次，2个发音重复2次）
+7. **文件命名**: 下载的文件会包含单词名、语言和重复次数信息，如 `hello_en_x3.wav`
 
 ### 支持的语言
 
@@ -94,8 +100,9 @@
 
 **音频下载操作**：
 ```
-访问Forvo页面 → 点击"📥 下载合并音频"按钮 → 自动下载合并的WAV文件
-例如: forvo.com/word/hello → 点击下载按钮 → 获得 hello.wav 文件
+访问Forvo页面 → 点击"📥 下载合并音频 (en)"按钮 → 自动下载合并的WAV文件
+例如: forvo.com/word/hello → 点击下载按钮 → 获得 hello_en_x3.wav 文件
+（如果只有1个发音，会重复3次；如果有2个发音，会重复2次；3个及以上发音播放1次）
 ```
 
 ## 🛠️ 技术实现
@@ -106,22 +113,26 @@
 - **设备检测**: 自动识别桌面端和移动端设备
 - **响应式交互**: 桌面端快捷键，移动端浮动按钮
 - **URL构建**: 自动编码并构建Forvo查询链接
+- **精确音频筛选**: 通过严格的CSS选择器和DOM区块限定，确保只获取主词条发音
+- **智能音量处理**: RMS音量分析和标准化增益计算，避免削波失真
+- **自适应重复逻辑**: 根据发音数量智能决定重复次数，优化学习体验
 
 ### 代码结构
 
 ```javascript
 // 主要功能模块
-├── 语言检测 (detectLanguage)
+├── 语言检测 (detectLanguage, containsJapanese)
 ├── 设备检测 (isMobileDevice)
 ├── URL构建 (buildForvoUrl)
 ├── 桌面端交互 (handleKeyDown)
-├── 移动端交互 (createForvoMobileButton, handleSelectionChange)
 ├── 弹窗创建 (createForvoPopup)
-├── 音频获取 (getAllAudioUrls, scrapeSound)
+├── 音频精确获取 (getAllAudioUrls, scrapeSound)
 ├── 音频下载 (downloadAudio, downloadMergedAudio)
-├── 音频合并 (mergeAudioFiles, audioBufferToWav)
-├── 下载按钮注入 (injectDownloadButton)
-└── 样式注入 (CSS animations)
+├── 智能音频合并 (mergeAudioFiles, audioBufferToWav)
+├── 音量标准化 (calculateNormalizedGains, calculateAudioStats)
+├── 下载按钮自动注入 (Forvo页面检测)
+├── Base64解码 (base64Decode)
+└── 工具函数 (trimChars, isNull, getTargetLanguageFromUrl)
 ```
 
 ## ⚙️ 配置选项
@@ -132,11 +143,14 @@
 |------|--------|------|
 | 最大文本长度 | 50字符 | 防止查询过长的文本 |
 | 设备检测阈值 | 768px | 屏幕宽度小于此值视为移动设备 |
-| 桌面端弹窗尺寸 | 响应式 | 根据屏幕尺寸自动调整 |
-| 移动端按钮位置 | 右下角 | 浮动按钮的显示位置 |
-| 动画效果 | 启用 | 淡入和缩放动画 |
+| 弹窗尺寸 | 800x600 | 桌面端弹窗的默认尺寸 |
 | 音频间隔时间 | 0.5秒 | 合并音频时各音频间的间隔 |
+| 轮次间隔时间 | 1.0秒 | 重复播放时每轮之间的间隔 |
 | 下载超时时间 | 15秒 | 单个音频文件的下载超时限制 |
+| 目标RMS音量 | 0.25 | 音频标准化的目标音量水平 |
+| 最大增益限制 | 3.0倍 | 音频增益的最大倍数限制 |
+| 最小增益限制 | 0.3倍 | 音频增益的最小倍数限制 |
+| 重复播放规则 | 1个→3次，2个→2次 | 根据发音数量的智能重复逻辑 |
 
 ## 🔧 开发
 
@@ -168,11 +182,23 @@ function isMobileDevice() {
 }
 
 // 修改弹窗尺寸
-popupWidth = Math.min(screenWidth * 0.6, 800); // 调整比例
+const width = 800, height = 600; // 调整弹窗尺寸
 
 // 添加新语言支持
 function detectLanguage(text) {
     // 添加您的语言检测逻辑
+}
+
+// 调整音量标准化参数
+const idealTargetRMS = 0.25; // 调整目标音量
+const maxGain = 3.0;  // 调整最大增益
+const minGain = 0.3;  // 调整最小增益
+
+// 调整重复播放逻辑
+if (decodedBuffers.length === 1) {
+    repeatCount = 3; // 调整单个发音的重复次数
+} else if (decodedBuffers.length === 2) {
+    repeatCount = 2; // 调整两个发音的重复次数
 }
 ```
 
@@ -188,7 +214,16 @@ function detectLanguage(text) {
 
 ## 📝 更新日志
 
-### v2.2 (当前版本)
+### v2.4 (当前版本)
+- ✅ 新增智能音量增强功能，自动调节音频音量
+- ✅ 实现智能重复播放逻辑（1个发音重复3次，2个发音重复2次）
+- ✅ 优化音频筛选算法，通过严格的区块限定确保只捕获主词条发音
+- ✅ 增加RMS音量分析和标准化增益计算
+- ✅ 改进音频合并算法，支持轮次间隔和音量标准化
+- ✅ 优化下载文件命名，包含语言和重复次数信息
+- ✅ 增强错误处理和用户反馈机制
+
+### v2.2
 - ✅ 音频下载和合并功能
 - ✅ 智能识别主词条发音（排除同义词）
 - ✅ 自动在Forvo页面注入下载按钮
