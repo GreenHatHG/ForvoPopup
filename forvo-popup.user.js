@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Forvo发音弹窗
 // @namespace    http://tampermonkey.net/
-// @version      2.4
-// @description  选中单词后弹窗显示Forvo发音页面，支持英语和日语自动识别，可合并下载所有音频（通过严格的区块限定和优化的逻辑，确保只捕获主词条发音，彻底杜绝相关短语干扰）。新增智能音量增强功能，自动调节音频音量
+// @version      2.5
+// @description  选中单词后弹窗显示Forvo发音页面，支持英语和日语自动识别，可合并下载所有音频（通过严格的区块限定和优化的逻辑，确保只捕获主词条发音，彻底杜绝相关短语干扰）。智能音量标准化：自动将低音量mp3提升至标准音量，高音量mp3降至标准音量
 // @author       Jooooody
 // @match        *://*/*
 // @grant        GM_xmlhttpRequest
@@ -226,67 +226,66 @@
         const data = buffer.getChannelData(0);
         let maxAmplitude = 0;
         let rmsSum = 0;
+        let activeSamples = 0;
 
-        // 计算最大振幅和RMS值
+        // 计算最大振幅和RMS值，忽略静音部分
+        const silenceThreshold = 0.001; // 静音阈值
+
         for (let i = 0; i < data.length; i++) {
             const sample = Math.abs(data[i]);
             maxAmplitude = Math.max(maxAmplitude, sample);
-            rmsSum += sample * sample;
+
+            // 只计算非静音部分的RMS
+            if (sample > silenceThreshold) {
+                rmsSum += sample * sample;
+                activeSamples++;
+            }
         }
 
-        const rms = Math.sqrt(rmsSum / data.length);
-        return { rms, maxAmplitude };
+        // 如果全是静音，使用全部样本计算
+        if (activeSamples === 0) {
+            activeSamples = data.length;
+            for (let i = 0; i < data.length; i++) {
+                const sample = Math.abs(data[i]);
+                rmsSum += sample * sample;
+            }
+        }
+
+        const rms = Math.sqrt(rmsSum / activeSamples);
+        return { rms, maxAmplitude, activeSamples, totalSamples: data.length };
     }
 
     function calculateNormalizedGains(buffers) {
         // 计算所有音频的统计信息
         const audioStats = buffers.map(buffer => calculateAudioStats(buffer));
 
-        // 设定一个合理的目标RMS音量（相当于正常说话音量）
-        const idealTargetRMS = 0.25;
+        // 设定标准音量目标
+        const TARGET_RMS = 0.12;  // 降低目标音量，更容易达到
 
-        // 计算当前音频的平均RMS，用于调整目标
-        const validRmsValues = audioStats.map(stats => stats.rms).filter(rms => rms > 0);
-        const averageRMS = validRmsValues.reduce((sum, rms) => sum + rms, 0) / validRmsValues.length;
+        console.log('=== 音频标准化处理 ===');
 
-        // 如果平均音量太小，使用理想目标；如果平均音量合理，则适当调整
-        let targetRMS;
-        if (averageRMS < 0.1) {
-            // 音频普遍很小，使用理想目标
-            targetRMS = idealTargetRMS;
-        } else if (averageRMS > 0.4) {
-            // 音频普遍较大，适当降低目标
-            targetRMS = Math.min(averageRMS * 0.8, 0.35);
-        } else {
-            // 音频音量适中，使用理想目标和平均值的折中
-            targetRMS = (idealTargetRMS + averageRMS) / 2;
-        }
-
-        console.log('平均RMS音量:', averageRMS.toFixed(3));
-        console.log('目标RMS音量:', targetRMS.toFixed(3));
-        console.log('原始RMS值:', audioStats.map(s => s.rms.toFixed(3)));
-
-        // 为每个音频计算标准化增益
+        // 为每个音频单独计算标准化增益
         return audioStats.map((stats, index) => {
             if (stats.rms <= 0 || stats.maxAmplitude <= 0) {
-                return 1.0; // 静音或无效音频
+                console.log(`音频${index + 1}: 静音或无效，跳过处理`);
+                return 1.0;
             }
 
-            // 计算达到目标RMS所需的增益
-            const rmsGain = targetRMS / stats.rms;
+            // 直接计算达到目标音量所需的增益
+            const targetGain = TARGET_RMS / stats.rms;
 
-            // 确保增益后不会削波（留5%余量）
-            const peakGain = 0.95 / stats.maxAmplitude;
+            // 大幅提高增益限制，处理极低音量音频
+            const MAX_GAIN = 25.0;  // 最大增益25倍
+            const MIN_GAIN = 0.1;   // 最小增益0.1倍
 
-            // 限制增益范围，避免过度放大或缩小
-            const maxGain = 3.0;  // 最大增益
-            const minGain = 0.3;  // 最小增益，避免音量过小
+            const finalGain = Math.min(Math.max(targetGain, MIN_GAIN), MAX_GAIN);
 
-            const finalGain = Math.min(rmsGain, peakGain, maxGain);
-            const clampedGain = Math.max(finalGain, minGain);
+            const resultRMS = stats.rms * finalGain;
+            const resultPeak = stats.maxAmplitude * finalGain;
 
-            console.log(`音频${index + 1}: RMS=${stats.rms.toFixed(3)} -> 增益=${clampedGain.toFixed(2)}`);
-            return clampedGain;
+            console.log(`音频${index + 1}: 原RMS=${stats.rms.toFixed(3)} -> 增益=${finalGain.toFixed(2)}x -> 结果RMS=${resultRMS.toFixed(3)}, Peak=${resultPeak.toFixed(3)}`);
+
+            return finalGain;
         });
     }
 
