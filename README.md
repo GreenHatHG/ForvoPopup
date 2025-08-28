@@ -1,7 +1,7 @@
 # Forvo发音弹窗
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-2.5-blue.svg)](https://github.com/yourusername/ForvoPopup)
+[![Version](https://img.shields.io/badge/version-2.7-blue.svg)](https://github.com/yourusername/ForvoPopup)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Compatible-green.svg)](https://www.tampermonkey.net/)
 
 一个智能的浏览器用户脚本，让您可以通过简单的快捷键操作，快速查看选中单词在Forvo上的发音。支持英语和日语的自动语言识别，提供响应式弹窗体验，并可合并下载所有音频文件。智能音量标准化：自动将低音量mp3提升至标准音量，高音量mp3降至标准音量，并支持智能重复播放。
@@ -9,7 +9,7 @@
 ## ✨ 特性
 
 - 🎯 **智能语言识别**: 自动检测选中文本是英语还是日语
-- ⌨️ **便捷快捷键**: 桌面端使用 `Ctrl + Alt` 组合键快速触发
+- ⌨️ **便捷快捷键**: 桌面端使用 `Ctrl + Alt + F` 组合键快速触发
 - 📱 **移动端支持**: 智能检测移动设备，提供浮动按钮交互方式
 - 🖥️ **跨平台兼容**: 完美适配桌面、平板和移动设备
 - 🚀 **轻量高效**: 纯JavaScript实现，无外部依赖
@@ -58,7 +58,7 @@
 ### 🖥️ 桌面端使用
 
 1. **选择文本**: 在任何网页上选中您想要查询发音的单词或短语
-2. **触发查询**: 按下 `Ctrl + Alt` 组合键
+2. **触发查询**: 按下 `Ctrl + Alt + F` 组合键
 3. **查看发音**: 系统会自动打开Forvo发音页面的新窗口
 
 ### 📱 移动端使用
@@ -86,9 +86,9 @@
 
 **桌面端操作**：
 ```
-选中文本: "hello" + Ctrl+Alt     → 打开英语发音页面（新窗口）
-选中文本: "こんにちは" + Ctrl+Alt  → 打开日语发音页面（新窗口）
-选中文本: "世界" + Ctrl+Alt      → 打开日语发音页面（新窗口）
+选中文本: "hello" + Ctrl+Alt+F     → 打开英语发音页面（新窗口）
+选中文本: "こんにちは" + Ctrl+Alt+F  → 打开日语发音页面（新窗口）
+选中文本: "世界" + Ctrl+Alt+F      → 打开日语发音页面（新窗口）
 ```
 
 **移动端操作**：
@@ -174,7 +174,7 @@ cd ForvoPopup
 
 ```javascript
 // 修改快捷键组合
-if (e.ctrlKey && e.altKey) { // 改为其他组合键
+if (e.ctrlKey && e.altKey && e.key === 'f') { // 改为其他组合键
 
 // 修改移动设备检测阈值
 function isMobileDevice() {
@@ -214,7 +214,19 @@ if (decodedBuffers.length === 1) {
 
 ## 📝 更新日志
 
-### v2.5 (当前版本)
+### v2.7 (当前版本)
+- ✅ **功能增强**:
+  - 将桌面端快捷键修改为 `Ctrl + Alt + F`，以提高易用性并减少与其他应用的冲突。
+
+### v2.6
+- ✅ **功能增强**:
+  - 新增了阻止Forvo网站登录弹窗的功能，提升用户体验。
+  - 使用 `MutationObserver` 实时监控并移除动态加载的弹窗。
+- ✅ **稳定性提升**:
+  - 增加了备用定时器，确保在 `MutationObserver` 失效时也能移除弹窗。
+  - 优化了弹窗移除逻辑，确保页面滚动条能够正常恢复。
+
+### v2.5
 - ✅ **音量标准化算法重构**:
   - 引入更精确的音量标准化模型，能够同时处理过高和过低的音量。
   - 将低音量音频提升至标准水平，同时将高音量音频降低，确保音量一致性。

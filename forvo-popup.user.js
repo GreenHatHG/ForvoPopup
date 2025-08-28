@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forvo发音弹窗
 // @namespace    http://tampermonkey.net/
-// @version      2.6
+// @version      2.7
 // @description  选中单词后弹窗显示Forvo发音页面，支持英语和日语自动识别，可合并下载所有音频（通过严格的区块限定和优化的逻辑，确保只捕获主词条发音，彻底杜绝相关短语干扰）。智能音量标准化：自动将低音量mp3提升至标准音量，高音量mp3降至标准音量。新增：并发下载优化，显著提升下载速度
 // @author       Jooooody
 // @match        *://*/*
@@ -758,7 +758,7 @@
     }
 
     function handleKeyDown(e) {
-        if (e.ctrlKey && e.altKey) {
+        if (e.ctrlKey && e.altKey && e.key === 'f') {
             const text = getSelectedText();
             if (text && text.length > 0 && text.length <= 50) {
                 e.preventDefault();
